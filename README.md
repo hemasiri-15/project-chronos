@@ -1,10 +1,10 @@
 # Project Chronos: The AI Archeologist
 
 ## Student Information
-- **Name:** [Your Name]
-- **ID:** [Your ID]
-- **Institution:** [Your University]
-- **Department:** [Your Department]
+- **Name:** Hema Siri Guduru 
+- **ID:** SE24UCSE043
+- **Institution:** Mahindra University
+- **Department:** CSE
 
 ## Project Description
 
