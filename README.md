@@ -136,3 +136,13 @@ python -m unittest discover -s tests -v
 - Google Gemini API: https://ai.google.dev/
 - Google Custom Search: https://developers.google.com/custom-search
 - Internet Slang: https://www.dictionary.com/e/slang/
+
+  ---
+
+## Usage Guide
+
+Once setup is complete, you can run the Project Chronos engine using:
+
+```bash
+python main.py "your fragmented text here"
+
