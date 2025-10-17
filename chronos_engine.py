@@ -1,161 +1,218 @@
-# chronos_engine.py
+"""
+Project Chronos: Text Reconstruction Engine
+Uses Google Gemini API for AI reconstruction and Custom Search for context
+"""
+
 import os
-import time
+import json
 import logging
 import requests
-from typing import List, Dict, Any
+from typing import Dict, List
 from dotenv import load_dotenv
+import google.generativeai as genai
 
-# Load env
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+logger = logging.getLogger(__name__)
+
+# Load environment variables from .env file
 load_dotenv()
 
-GEMINI_KEY = os.getenv("GEMINI_API_KEY")
-GOOGLE_SEARCH_KEY = os.getenv("GOOGLE_SEARCH_API_KEY")
-CSE_ID = os.getenv("GOOGLE_SEARCH_ENGINE_ID")
-
-# Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-logger = logging.getLogger("chronos")
-
-# Try/except import for google-genai so file can be imported during tests without keys.
-try:
-    from google import genai
-except Exception:
-    genai = None
-    logger.warning("google-genai not available; gemini calls will be skipped in this environment.")
-
-# --- Helpers ---
-def exponential_backoff(attempt: int, base: float = 0.5, cap: float = 8.0):
-    sleep_for = min(cap, base * (2 ** attempt))
-    time.sleep(sleep_for)
-
-def safe_request_get(url: str, params: dict, max_retries: int = 3, timeout: int = 10) -> dict:
-    for attempt in range(max_retries):
-        try:
-            r = requests.get(url, params=params, timeout=timeout)
-            r.raise_for_status()
-            return r.json()
-        except Exception as e:
-            logger.warning("Request failed (attempt %d): %s", attempt + 1, e)
-            if attempt + 1 == max_retries:
-                logger.error("Max retries reached for %s", url)
-                raise
-            exponential_backoff(attempt)
-
-# --- Gemini (GenAI) call ---
-def call_gemini_reconstruct(fragment: str, model_name: str = "gemini-1.5-pro") -> Dict[str, Any]:
-    """
-    Calls Gemini via google-genai and returns a dict with 'reconstruction' and 'rationale'.
-    If genai is not available or key not set, returns a fallback message.
-    """
-    if genai is None or GEMINI_KEY is None:
-        logger.info("GenAI SDK or GEMINI_API_KEY not configured; returning fallback.")
-        return {"reconstruction": fragment, "rationale": "No Gemini call made (SDK or key missing).", "inferred": []}
-
-    # Configure the client (this uses environment auth; key may be set differently per SDK)
-    genai.configure(api_key=GEMINI_KEY)  # can raise if not configured
-
-    prompt = f"""
-You are an editor reconstructing an informal, fragmented internet post into a single clear sentence.
-1) Provide the reconstructed sentence.
-2) On the next line, provide a short rationale (1-2 lines) and mark any inferred words with [INFERRED].
-Output in JSON with keys: reconstruction, rationale, inferred_tokens.
-Fragment: \"\"\"{fragment}\"\"\""""
-
-    # Use a simple call pattern for the SDK. Adapt if the SDK API differs.
-    try:
-        model = genai.Model(model_name)
-        response = model.generate(prompt=prompt, max_output_tokens=400)
-        text = response.text if hasattr(response, "text") else str(response)
-    except Exception as e:
-        logger.exception("Gemini call failed: %s", e)
-        return {"reconstruction": fragment, "rationale": f"Gemini call failed: {e}", "inferred": []}
-
-    # Basic parsing: try to extract reconstruction (best-effort).
-    # The model prompt asks for JSON-like output, but be defensive.
-    # For demo, we return the entire text as reconstruction.
-    return {"reconstruction": text.strip(), "rationale": "Model-provided rationale (raw).", "inferred": []}
-
-# --- Google Custom Search (CSE) ---
-def google_custom_search(query: str, num: int = 3) -> List[Dict[str, Any]]:
-    if not GOOGLE_SEARCH_KEY or not CSE_ID:
-        logger.info("GOOGLE_SEARCH_KEY or CSE_ID not configured; skipping search.")
-        return []
-
-    url = "https://www.googleapis.com/customsearch/v1"
-    params = {"key": GOOGLE_SEARCH_KEY, "cx": CSE_ID, "q": query, "num": num}
-    try:
-        data = safe_request_get(url, params)
-    except Exception:
-        logger.exception("Custom Search request failed for query: %s", query)
-        return []
-
-    items = data.get("items", [])
-    results = []
-    for it in items:
-        results.append({
-            "title": it.get("title"),
-            "link": it.get("link"),
-            "snippet": it.get("snippet"),
-            "displayLink": it.get("displayLink"),
-        })
-    return results
-
-# --- Main engine class ---
-class ChronosReconstructionEngine:
+class ChronosEngine:
     def __init__(self):
-        self.model_name = "gemini-1.5-pro"
-
-    def process(self, fragment: str) -> Dict[str, Any]:
-        logger.info("Processing fragment: %s", fragment)
-        # 1) Normalize basic whitespace
-        original = fragment.strip()
-
-        # 2) Call Gemini to reconstruct
+        """Initialize Chronos engine with API keys"""
+        self.gemini_key = os.getenv('GEMINI_API_KEY')
+        self.search_key = os.getenv('GOOGLE_SEARCH_API_KEY')
+        self.search_engine_id = os.getenv('GOOGLE_SEARCH_ENGINE_ID')
+        
+        logger.info(f"GEMINI_API_KEY available: {bool(self.gemini_key)}")
+        logger.info(f"GOOGLE_SEARCH_API_KEY available: {bool(self.search_key)}")
+        
+        if self.gemini_key:
+            genai.configure(api_key=self.gemini_key)
+    
+    def reconstruct_with_gemini(self, text: str) -> Dict:
+        """Use Gemini to reconstruct text"""
+        if not self.gemini_key:
+            logger.warning("No Gemini API key - using fallback")
+            return {
+                'reconstructed': text,
+                'confidence': 0.0,
+                'era': 'Unknown',
+                'slang': [],
+                'explanation': 'Gemini API key not configured'
+            }
+        
         try:
-            gemini_out = call_gemini_reconstruct(original, model_name=self.model_name)
+            prompt = f"""You are an expert in internet history and digital linguistics.
+Reconstruct this fragmented internet text by expanding abbreviations and slang:
+
+"{text}"
+
+Respond ONLY with valid JSON (no markdown, no code blocks):
+{{
+    "reconstructed": "Full expanded version of the text",
+    "confidence": 0.95,
+    "era": "Time period (e.g., Early 2000s MySpace Era)",
+    "slang": ["list", "of", "slang", "terms"],
+    "explanation": "Brief explanation of reconstruction"
+}}"""
+            
+            model = genai.GenerativeModel('gemini-pro')
+            response = model.generate_content(prompt)
+            
+            # Parse response
+            result = json.loads(response.text)
+            logger.info(f"Gemini reconstruction successful: {result['reconstructed'][:50]}...")
+            return result
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON parsing error: {e}")
+            return {
+                'reconstructed': text,
+                'confidence': 0.0,
+                'era': 'Unknown',
+                'slang': [],
+                'explanation': f'Could not parse Gemini response: {str(e)}'
+            }
         except Exception as e:
-            logger.exception("Error calling Gemini: %s", e)
-            gemini_out = {"reconstruction": original, "rationale": f"Error: {e}", "inferred": []}
-
-        reconstructed_text = gemini_out.get("reconstruction", original)
-
-        # 3) Auto-keyword extraction (very simple): top N words, remove very short tokens
-        tokens = [t for t in reconstructed_text.split() if len(t) > 2]
-        query = " ".join(tokens[:6]) if tokens else original
-
-        # 4) Search web for context
+            logger.error(f"Gemini error: {e}")
+            return {
+                'reconstructed': text,
+                'confidence': 0.0,
+                'era': 'Unknown',
+                'slang': [],
+                'explanation': f'Gemini API error: {str(e)}'
+            }
+    
+    def search_web(self, query: str) -> List[Dict]:
+        """Search web for sources"""
+        if not self.search_key or not self.search_engine_id:
+            logger.info("No search API configured - using default sources")
+            return self.get_default_sources()
+        
         try:
-            sources = google_custom_search(query, num=3)
-        except Exception:
-            sources = []
-
-        # 5) Build report
+            url = "https://www.googleapis.com/customsearch/v1"
+            params = {
+                'q': query,
+                'key': self.search_key,
+                'cx': self.search_engine_id,
+                'num': 5
+            }
+            response = requests.get(url, params=params, timeout=5)
+            
+            if response.status_code == 200:
+                items = response.json().get('items', [])
+                sources = [
+                    {
+                        'title': item['title'],
+                        'url': item['link'],
+                        'snippet': item['snippet']
+                    }
+                    for item in items
+                ]
+                logger.info(f"Found {len(sources)} sources")
+                return sources
+            else:
+                logger.warning(f"Search API error: {response.status_code}")
+                return self.get_default_sources()
+                
+        except Exception as e:
+            logger.error(f"Search error: {e}")
+            return self.get_default_sources()
+    
+    def get_default_sources(self) -> List[Dict]:
+        """Return default sources when API unavailable"""
+        return [
+            {
+                'title': 'Internet Slang Dictionary - Dictionary.com',
+                'url': 'https://www.dictionary.com/e/slang/',
+                'snippet': 'Comprehensive dictionary of internet slang and informal language'
+            },
+            {
+                'title': 'Know Your Meme - Internet Culture Archive',
+                'url': 'https://knowyourmeme.com/',
+                'snippet': 'Documentation of memes and internet culture phenomena'
+            },
+            {
+                'title': 'Internet History - Wikipedia',
+                'url': 'https://en.wikipedia.org/wiki/Internet_culture',
+                'snippet': 'Overview of internet culture, communication styles, and history'
+            }
+        ]
+    
+    def process(self, fragmented_text: str) -> Dict:
+        """Main processing pipeline"""
+        if not fragmented_text or not fragmented_text.strip():
+            return {'error': 'Input text cannot be empty'}
+        
+        logger.info(f"Processing fragment: {fragmented_text}")
+        
+        # Step 1: Reconstruct
+        reconstruction = self.reconstruct_with_gemini(fragmented_text)
+        
+        # Step 2: Search for sources
+        search_query = f"{' '.join(reconstruction.get('slang', [])[:3])} internet slang history"
+        if not search_query.strip():
+            search_query = reconstruction.get('era', 'internet history')
+        
+        sources = self.search_web(search_query)
+        
+        # Step 3: Build report
         report = {
-            "original": original,
-            "reconstruction": reconstructed_text,
-            "rationale": gemini_out.get("rationale"),
-            "inferred_tokens": gemini_out.get("inferred", []),
-            "query_used_for_search": query,
-            "sources": sources,
-            "meta": {"engine": "ChronosReconstructionEngine", "model": self.model_name, "timestamp": time.time()},
+            'original': fragmented_text,
+            'reconstruction': reconstruction['reconstructed'],
+            'confidence': reconstruction['confidence'],
+            'era': reconstruction['era'],
+            'slang_detected': reconstruction['slang'],
+            'explanation': reconstruction['explanation'],
+            'sources': sources
         }
+        
         return report
 
-# Utility for printing a basic formatted report
-def format_report_text(report: dict) -> str:
-    lines = []
-    lines.append("=== Project Chronos: Reconstruction Report ===")
-    lines.append(f"Original: {report.get('original')}")
-    lines.append("")
-    lines.append("Reconstruction:")
-    lines.append(report.get("reconstruction", ""))
-    lines.append("")
-    lines.append("Rationale:")
-    lines.append(report.get("rationale", ""))
-    lines.append("")
-    lines.append("Sources:")
-    for s in report.get("sources", []):
-        lines.append(f"- {s.get('title')} ({s.get('displayLink')}): {s.get('link')}")
-        lines.append(f"  snippet: {s.get('snippet')}")
-    return "\n".join(lines)
+
+def format_report_text(report: Dict) -> str:
+    """Format report for console display"""
+    if 'error' in report:
+        return f"Error: {report['error']}"
+    
+    output = "\n" + "="*70
+    output += "\n🏛️  PROJECT CHRONOS - RECONSTRUCTION REPORT"
+    output += "\n" + "="*70
+    
+    output += f"\n\n📜 ORIGINAL FRAGMENT\n> {report['original']}"
+    
+    output += f"\n\n✨ AI-RECONSTRUCTED TEXT\n> {report['reconstruction']}"
+    
+    output += f"\n\n📊 CONFIDENCE: {report['confidence']:.0%}"
+    output += f"\n📅 ERA: {report['era']}"
+    output += f"\n🔤 SLANG DETECTED: {', '.join(report['slang_detected']) or 'None'}"
+    output += f"\n💡 EXPLANATION: {report['explanation']}"
+    
+    output += f"\n\n🔗 SOURCES ({len(report['sources'])} found)"
+    for i, source in enumerate(report['sources'], 1):
+        output += f"\n{i}. {source['title']}"
+        output += f"\n   URL: {source['url']}"
+    
+    output += "\n\n" + "="*70 + "\n"
+    return output
+
+
+if __name__ == "__main__":
+    import sys
+    
+    text = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else "test"
+    
+    engine = ChronosEngine()
+    report = engine.process(text)
+    
+    if 'error' not in report:
+        print(format_report_text(report))
+        
+        # Save JSON
+        with open('reconstruction_report.json', 'w') as f:
+            json.dump(report, f, indent=2)
+        print("✅ Report saved to reconstruction_report.json")
+    else:
+        print(f"❌ {report['error']}")
