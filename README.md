@@ -118,14 +118,102 @@ python -m unittest discover -s tests -v
 
 ## Troubleshooting
 
-**"GEMINI_API_KEY not found"**
-- Verify `.env` file exists in project root
-- Check you have a valid Gemini API key from ai.google.dev
+### Issue: "GEMINI_API_KEY not found"
 
-**"No reconstruction output"**
-- Ensure `.env` has GEMINI_API_KEY set
-- Check internet connection
-- Verify API key is active
+**Solution:**
+1. Verify `.env` file exists in project root
+2. Check file contains: `GEMINI_API_KEY=your_actual_key`
+3. Ensure no spaces around the equals sign
+4. Restart terminal after creating/updating `.env`
+```bash
+cat .env  # Verify file contents
+```
+
+---
+
+### Issue: "ModuleNotFoundError: No module named 'google.generativeai'"
+
+**Solution:**
+```bash
+# Make sure virtual environment is activated
+source venv/bin/activate  # Mac/Linux
+# or
+venv\Scripts\activate  # Windows
+
+# Reinstall dependencies
+pip install -r requirements.txt --force-reinstall
+```
+
+---
+
+### Issue: "Program returns original text unchanged"
+
+**Cause:** API key not properly configured or Gemini API unavailable
+
+**Solution:**
+1. Verify API key is valid at https://ai.google.dev
+2. Check internet connection
+3. Try again - may be temporary API issue
+4. Check logs for error messages
+```bash
+python main.py "test text" 2>&1 | grep -i error
+```
+
+---
+
+### Issue: "No sources found / Empty sources list"
+
+**Cause:** Search API not configured or quota exceeded
+
+**Solution:**
+1. Optional - if you didn't set up Google Custom Search API, that's fine
+2. System uses fallback sources automatically
+3. If you want custom sources, set up `GOOGLE_SEARCH_API_KEY` and `GOOGLE_SEARCH_ENGINE_ID`
+4. Check Google Cloud Console for quota limits
+```bash
+cat .env  # Verify both API keys are set
+```
+
+---
+
+### Issue: "JSON parsing error" or "Unexpected Gemini response"
+
+**Cause:** Gemini API returned non-JSON format
+
+**Solution:**
+1. Verify API key is active
+2. Try with simpler input text
+3. Check if API key has usage quota remaining
+4. System includes graceful fallback - report still generated
+
+---
+
+### Issue: "Connection timeout" or "Network error"
+
+**Cause:** Internet connectivity issue
+
+**Solution:**
+```bash
+# Test internet connection
+ping google.com
+
+# Try again with longer timeout
+python main.py "test"
+
+# Check if APIs are accessible
+curl https://generativelanguage.googleapis.com
+```
+
+---
+
+### Common Error Messages
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `ValueError: GEMINI_API_KEY not set` | Missing .env file or variable | Create .env with GEMINI_API_KEY |
+| `requests.exceptions.Timeout` | API call too slow | Check internet, try again |
+| `json.JSONDecodeError` | Gemini returned invalid JSON | Retry, may be temporary |
+| `KeyError: 'reconstructed'` | Unexpected API response format | Check API key validity |
 
 ## License
 
