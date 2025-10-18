@@ -109,6 +109,28 @@ project-chronos/
 - **python-dotenv** - Environment configuration
 - **requests** - HTTP operations
 
+## Future Improvements & Roadmap
+
+### Phase 2: Enhanced Features
+- Multi-language Support
+- Historical Database
+- Web UI (Flask/React)
+- Batch Processing
+- Custom Prompts
+
+### Phase 3: Advanced Capabilities
+- Fine-tuned Models
+- Platform Detection
+- Sentiment Analysis
+- PDF/HTML Reports
+- REST API
+
+### Known Limitations
+- Requires active internet connection
+- Limited to Gemini's training data (cutoff: April 2024)
+- Cannot reconstruct completely novel terms
+- Web search depends on current indexing
+
 ## Testing
 
 Run unit tests:
