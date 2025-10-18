@@ -109,6 +109,39 @@ project-chronos/
 - **python-dotenv** - Environment configuration
 - **requests** - HTTP operations
 
+## Sample Output
+
+### Example 1: MySpace Era (Early 2000s)
+
+**Input:**
+```bash
+python main.py "smh at the top 8 drama. ppl need to chill. g2g, ttyl."
+```
+
+**Output:**
+```
+🏛️  PROJECT CHRONOS - RECONSTRUCTION REPORT
+[... show the output ...]
+```
+
+### Example 2: IRC Chat Room Era (Late 1990s)
+
+**Input:**
+```bash
+python main.py "asl? im in the lobby. brb 10 mins."
+```
+
+[... brief output ...]
+
+### Example 3: Modern Gen Z Slang (2020s)
+
+**Input:**
+```bash
+python main.py "no cap fr fr bestie is sus lowkey"
+```
+
+[... brief output ...]
+
 ## Future Improvements & Roadmap
 
 ### Phase 2: Enhanced Features
