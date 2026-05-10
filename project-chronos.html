@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Chronos — AI Archaeology Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a08;
+    --bg-panel: #111110;
+    --bg-card: #181815;
+    --bg-lift: #1f1f1b;
+    --border: rgba(255,255,255,0.07);
+    --border-md: rgba(255,255,255,0.12);
+    --amber: #d4a029;
+    --amber-dim: #7a5a14;
+    --amber-glow: rgba(212,160,41,0.12);
+    --amber-glow-strong: rgba(212,160,41,0.22);
+    --text: #e8e4d8;
+    --text-muted: #7a7870;
+    --text-dim: #4a4845;
+    --green: #4d8a5c;
+    --red: #8a4d4d;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+    --radius: 4px;
+    --radius-md: 8px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── SCANLINE OVERLAY ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 2px,
+      rgba(0,0,0,0.06) 2px,
+      rgba(0,0,0,0.06) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* ─── TOP HEADER ─── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: rgba(10,10,8,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-mark {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--amber);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 14px;
+    color: var(--amber);
+    letter-spacing: -1px;
+  }
+
+  .logo-text {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .logo-text span {
+    color: var(--amber);
+  }
+
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+  }
+
+  .badge {
+    padding: 3px 8px;
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    padding: 5rem 2rem 3rem;
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .hero::before {
+    content: 'CHRONOS';
+    position: absolute;
+    top: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-display);
+    font-size: clamp(80px, 18vw, 200px);
+    font-weight: 800;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(255,255,255,0.03);
+    white-space: nowrap;
+    pointer-events: none;
+    letter-spacing: -0.04em;
+    user-select: none;
+  }
+
+  .hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    display: block;
+    width: 32px;
+    height: 1px;
+    background: var(--amber);
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.4rem, 5vw, 4.2rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+
+  h1 em {
+    font-style: normal;
+    color: var(--amber);
+  }
+
+  .hero-desc {
+    font-size: 14px;
+    color: var(--text-muted);
+    max-width: 560px;
+    line-height: 1.8;
+    margin-bottom: 3rem;
+  }
+
+  /* ─── MAIN LAYOUT ─── */
+  .main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 2rem 4rem;
+    display: grid;
+    gap: 1rem;
+  }
+
+  /* ─── TERMINAL PANEL ─── */
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .panel-dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border-md);
+  }
+
+  .dot.r { background: #5c3030; }
+  .dot.y { background: #5c5030; }
+  .dot.g { background: #305c40; }
+
+  /* ─── INPUT AREA ─── */
+  .input-area {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .input-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .prompt-symbol {
+    color: var(--amber);
+    font-size: 18px;
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+
+  textarea {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border-md);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 10px 14px;
+    resize: none;
+    outline: none;
+    line-height: 1.7;
+    min-height: 80px;
+    transition: border-color 0.2s;
+    border-radius: var(--radius);
+  }
+
+  textarea::placeholder { color: var(--text-dim); }
+  textarea:focus { border-color: var(--amber-dim); }
+
+  /* ─── EXAMPLES ROW ─── */
+  .examples {
+    padding: 0.75rem 1.5rem 1rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  .examples-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-right: 4px;
+    flex-shrink: 0;
+  }
+
+  .example-pill {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-radius: 2px;
+  }
+
+  .example-pill:hover {
+    border-color: var(--amber-dim);
+    color: var(--amber);
+    background: var(--amber-glow);
+  }
+
+  /* ─── RUN BUTTON ─── */
+  .run-btn {
+    padding: 0 1.5rem 1.25rem;
+  }
+
+  button.analyze {
+    background: var(--amber);
+    color: #0a0a08;
+    border: none;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 11px 32px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: var(--radius);
+  }
+
+  button.analyze:hover { opacity: 0.88; }
+  button.analyze:active { transform: scale(0.98); }
+  button.analyze:disabled {
+    background: var(--amber-dim);
+    color: rgba(10,10,8,0.5);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(10,10,8,0.3);
+    border-top-color: #0a0a08;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── OUTPUT PANEL ─── */
+  .output-panel {
+    display: none;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--border);
+  }
+
+  .output-panel.visible { display: flex; }
+
+  /* ─── ERA BANNER ─── */
+  .era-banner {
+    background: var(--amber-glow);
+    border-bottom: 1px solid var(--amber-dim);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .era-title {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--amber);
+  }
+
+  .era-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .confidence-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .confidence-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .confidence-bar {
+    width: 80px;
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .confidence-fill {
+    height: 100%;
+    background: var(--amber);
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  .confidence-pct {
+    font-size: 11px;
+    color: var(--amber);
+    min-width: 28px;
+  }
+
+  /* ─── OUTPUT SECTIONS ─── */
+  .out-section {
+    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 1.5rem;
+  }
+
+  .out-section:last-child { border-bottom: none; }
+
+  .out-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .out-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .reconstruction-text {
+    font-size: 15px;
+    line-height: 1.85;
+    color: var(--text);
+  }
+
+  .slang-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+  }
+
+  .slang-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    border-radius: var(--radius);
+  }
+
+  .slang-term {
+    color: var(--amber);
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .slang-meaning {
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .sources-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .source-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-decoration: none;
+    transition: border-color 0.15s;
+    cursor: pointer;
+  }
+
+  .source-item:hover { border-color: var(--amber-dim); }
+
+  .source-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--amber-dim);
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+
+  .source-text {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .context-text {
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text-muted);
+  }
+
+  .context-text strong {
+    color: var(--text);
+    font-weight: 400;
+  }
+
+  /* ─── RAW JSON TOGGLE ─── */
+  .json-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 10px 1.5rem;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    transition: color 0.15s;
+    user-select: none;
+  }
+
+  .json-toggle:hover { color: var(--amber); }
+
+  .json-block {
+    display: none;
+    padding: 1rem 1.5rem;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+  }
+
+  .json-block.open { display: block; }
+
+  pre {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* ─── ERROR STATE ─── */
+  .error-msg {
+    padding: 1rem 1.5rem;
+    color: #c08080;
+    font-size: 12px;
+    line-height: 1.6;
+    display: flex;
+    gap: 10px;
+  }
+
+  /* ─── STATS ROW ─── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat-cell {
+    padding: 1rem 1.25rem;
+    border-right: 1px solid var(--border);
+  }
+
+  .stat-cell:last-child { border-right: none; }
+
+  .stat-num {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--amber);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-lbl {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .footer-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+  }
+
+  .footer-credits {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  /* ─── TYPEWRITER CURSOR ─── */
+  .cursor-blink {
+    display: inline-block;
+    width: 8px;
+    height: 14px;
+    background: var(--amber);
+    vertical-align: middle;
+    animation: blink 1s step-end infinite;
+    margin-left: 2px;
+  }
+
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* ─── API KEY INPUT ─── */
+  .api-key-panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--amber-dim);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .api-key-label {
+    font-size: 11px;
+    color: var(--amber);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  input[type="password"], input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-md);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 7px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+    border-radius: var(--radius);
+  }
+
+  input:focus { border-color: var(--amber-dim); }
+
+  .api-hint {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  /* ─── PULSE ANIMATION ─── */
+  @keyframes pulse-amber {
+    0%, 100% { box-shadow: 0 0 0 0 var(--amber-glow-strong); }
+    50% { box-shadow: 0 0 0 6px transparent; }
+  }
+
+  .active-input {
+    animation: pulse-amber 2s infinite;
+  }
+
+  /* ─── LOADING STATE ─── */
+  .loading-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 1.5rem;
+  }
+
+  .loading-line {
+    height: 12px;
+    background: linear-gradient(90deg, var(--bg-lift) 25%, var(--border-md) 50%, var(--bg-lift) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: 2px;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .l1 { width: 75%; }
+  .l2 { width: 90%; }
+  .l3 { width: 60%; }
+  .l4 { width: 80%; }
+
+  .tech-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 1.5rem;
+  }
+
+  .tech-tag {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 3px 8px;
+  }
+
+  @media (max-width: 640px) {
+    h1 { font-size: 2rem; }
+    .hero::before { display: none; }
+    .stats-row { grid-template-columns: 1fr; }
+    .stat-cell { border-right: none; border-bottom: 1px solid var(--border); }
+    .stat-cell:last-child { border-bottom: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">Ch</div>
+    <div class="logo-text">Project <span>Chronos</span></div>
+  </div>
+  <div class="header-meta">
+    <span>SE24UCSE043</span>
+    <span class="badge">Live Demo</span>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-eyebrow">AI Archaeological Engine</div>
+  <h1>Excavate the<br><em>Digital Past</em></h1>
+  <p class="hero-desc">
+    Project Chronos reconstructs fragmented internet communications — IRC logs, early forum posts, legacy chat slang — using AI to restore context, detect era, and document cultural meaning.
+  </p>
+  <div class="tech-tags">
+    <span class="tech-tag">Gemini API</span>
+    <span class="tech-tag">NLP Reconstruction</span>
+    <span class="tech-tag">Era Detection</span>
+    <span class="tech-tag">Slang Analysis</span>
+    <span class="tech-tag">Confidence Scoring</span>
+  </div>
+</section>
+
+<main class="main">
+
+  <!-- API KEY -->
+  <div class="api-key-panel">
+    <span class="api-key-label">⚿ Gemini API Key</span>
+    <input type="password" id="apiKey" placeholder="Enter your Google Gemini API key (AIza...)" />
+    <span class="api-hint">Runs client-side · never stored · get yours at ai.google.dev</span>
+  </div>
+
+  <!-- INPUT PANEL -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-dots">
+        <div class="dot r"></div>
+        <div class="dot y"></div>
+        <div class="dot g"></div>
+      </div>
+      <span>chronos_engine.py — input fragment</span>
+      <span></span>
+    </div>
+    <div class="input-area">
+      <div class="input-label">Fragment Input</div>
+      <div class="input-row">
+        <span class="prompt-symbol">$</span>
+        <textarea id="fragmentInput" rows="3" placeholder="Paste a fragmented internet communication... e.g. 'smh at the top 8 drama. ppl need to chill. g2g ttyl'"></textarea>
+      </div>
+    </div>
+    <div class="examples">
+      <span class="examples-label">Examples</span>
+      <span class="example-pill" onclick="setExample(this.dataset.val)" data-val="smh at the top 8 drama. ppl need to chill. g2g, ttyl.">MySpace era</span>
+      <span class="example-pill" onclick="setExample(this.dataset.val)" data-val="asl? im in the lobby. brb 10 mins. any1 got aim?">IRC / AIM era</span>
+      <span class="example-pill" onclick="setExample(this.dataset.val)" data-val="no cap fr fr bestie is lowkey sus rn. its giving main character vibes ngl">Gen Z 2020s</span>
+      <span class="example-pill" onclick="setExample(this.dataset.val)" data-val="lol rofl @ ur post. jk jk. bbiab gonna go dl sum mp3s kthxbye">Y2K era</span>
+      <span class="example-pill" onclick="setExample(this.dataset.val)" data-val="shipped the pr. lgtm tbh. stand-up in 5. async the rest k?">Dev Slack 2020s</span>
+    </div>
+    <div class="run-btn">
+      <button class="analyze" id="runBtn" onclick="runAnalysis()">
+        <span id="btnIcon">▶</span>
+        <span id="btnText">Analyze Fragment</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- OUTPUT PANEL -->
+  <div class="output-panel" id="outputPanel">
+    <!-- era banner -->
+    <div class="era-banner" id="eraBanner">
+      <span class="era-title" id="eraTitle">—</span>
+      <div class="era-meta">
+        <div class="confidence-bar-wrap">
+          <span class="confidence-label">Confidence</span>
+          <div class="confidence-bar">
+            <div class="confidence-fill" id="confFill" style="width:0%"></div>
+          </div>
+          <span class="confidence-pct" id="confPct">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- stats -->
+    <div class="stats-row" id="statsRow">
+      <div class="stat-cell">
+        <div class="stat-num" id="statSlang">0</div>
+        <div class="stat-lbl">Slang terms</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num" id="statWords">0</div>
+        <div class="stat-lbl">Words decoded</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-num" id="statPlatform">—</div>
+        <div class="stat-lbl">Platform detected</div>
+      </div>
+    </div>
+
+    <!-- reconstruction -->
+    <div class="out-section">
+      <div class="out-label">Reconstruction</div>
+      <div class="reconstruction-text" id="reconstructionText"></div>
+    </div>
+
+    <!-- slang -->
+    <div class="out-section" id="slangSection">
+      <div class="out-label">Slang Glossary</div>
+      <div class="slang-grid" id="slangGrid"></div>
+    </div>
+
+    <!-- context -->
+    <div class="out-section">
+      <div class="out-label">Cultural Context</div>
+      <div class="context-text" id="contextText"></div>
+    </div>
+
+    <!-- sources -->
+    <div class="out-section" id="sourcesSection">
+      <div class="out-label">Reference Sources</div>
+      <div class="sources-list" id="sourcesList"></div>
+    </div>
+
+    <!-- JSON toggle -->
+    <div class="json-toggle" onclick="toggleJson()" id="jsonToggle">
+      <span>{ }</span> View raw JSON output
+    </div>
+    <div class="json-block" id="jsonBlock">
+      <pre id="jsonPre"></pre>
+    </div>
+
+  </div>
+
+  <!-- LOADING STATE -->
+  <div class="output-panel" id="loadingPanel" style="display:none; border:1px solid var(--border);">
+    <div class="era-banner" style="background:var(--bg-card);">
+      <span class="era-title" style="color:var(--text-dim);">Analyzing fragment...</span>
+    </div>
+    <div class="loading-lines">
+      <div class="loading-line l1"></div>
+      <div class="loading-line l2"></div>
+      <div class="loading-line l3"></div>
+      <div class="loading-line l4"></div>
+    </div>
+  </div>
+
+  <!-- ERROR STATE -->
+  <div class="output-panel" id="errorPanel" style="display:none; border:1px solid var(--border);">
+    <div class="error-msg">
+      <span>⚠</span>
+      <span id="errorText"></span>
+    </div>
+  </div>
+
+</main>
+
+<footer style="border-top: 1px solid var(--border); padding: 1.5rem 2rem; max-width: 900px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+  <div class="footer-name">Hema Siri Guduru · SE24UCSE043 · Mahindra University</div>
+  <div class="footer-credits">Project Chronos · CSE Dept · AI Archaeology Engine</div>
+</footer>
+
+<script>
+function setExample(val) {
+  document.getElementById('fragmentInput').value = val;
+  document.getElementById('fragmentInput').focus();
+}
+
+function toggleJson() {
+  const b = document.getElementById('jsonBlock');
+  b.classList.toggle('open');
+  document.getElementById('jsonToggle').querySelector('span:last-child').textContent =
+    b.classList.contains('open') ? 'Hide raw JSON output' : 'View raw JSON output';
+}
+
+function show(id) { document.getElementById(id).style.display = ''; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+function showFlex(id) { document.getElementById(id).style.display = 'flex'; }
+
+async function runAnalysis() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const fragment = document.getElementById('fragmentInput').value.trim();
+
+  if (!apiKey) {
+    showError('Please enter your Anthropic API key to run the analysis.');
+    return;
+  }
+  if (!fragment) {
+    showError('Please enter a text fragment to analyze.');
+    return;
+  }
+
+  setLoading(true);
+
+  const systemPrompt = `You are the Chronos Engine — an expert in digital archaeology and internet linguistic history.
+Your task: analyze fragmented internet text and reconstruct its meaning, era, and cultural context.
+
+ALWAYS respond with valid JSON only. No markdown fences, no extra text. This exact schema:
+{
+  "era": "string (e.g. 'MySpace Era (2003–2009)')",
+  "platform": "string (e.g. 'MySpace', 'IRC', 'AIM', 'Twitter', 'Slack', 'Unknown')",
+  "confidence": number (0-100),
+  "reconstruction": "string (the full, modern English reconstruction of what the fragment means)",
+  "slang": [
+    { "term": "original term", "meaning": "what it means in modern English" }
+  ],
+  "context": "string (2-4 sentences of cultural context — what was happening in internet culture during this era, what platforms were dominant, what made this slang emerge)",
+  "sources": [
+    { "title": "source title", "url": "realistic URL to a reference" }
+  ],
+  "wordCount": number (approximate words decoded/expanded)
+}
+
+Be specific about eras. Be historically accurate. Sources should be realistic (netlore.org, knowyourmeme.com, dictionary.com/slang, internetslang.com, etc).`;
+
+  const userPrompt = `Analyze this internet text fragment: "${fragment}"`;
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          maxOutputTokens: 1200,
+          temperature: 0.3
+        }
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error?.message || `Gemini API error ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    let parsed;
+    try {
+      parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    } catch {
+      throw new Error('Could not parse Gemini response. Try again or check your API key.');
+    }
+
+    renderOutput(parsed, raw);
+  } catch (e) {
+    showError(e.message || 'An unknown error occurred. Check your Gemini API key and internet connection.');
+  } finally {
+    setLoading(false);
+  }
+}
+
+function renderOutput(d, rawJson) {
+  hide('loadingPanel');
+  hide('errorPanel');
+
+  document.getElementById('eraTitle').textContent = d.era || 'Unknown Era';
+  const conf = Math.min(100, Math.max(0, d.confidence || 0));
+  document.getElementById('confFill').style.width = conf + '%';
+  document.getElementById('confPct').textContent = conf + '%';
+  document.getElementById('statSlang').textContent = (d.slang || []).length;
+  document.getElementById('statWords').textContent = d.wordCount || '—';
+  document.getElementById('statPlatform').textContent = d.platform || '—';
+  document.getElementById('reconstructionText').textContent = d.reconstruction || '—';
+  document.getElementById('contextText').innerHTML = d.context
+    ? d.context.replace(/\b(MySpace|IRC|AIM|Twitter|Facebook|Reddit|Tumblr|TikTok|Discord|Slack)\b/g, '<strong>$1</strong>')
+    : '—';
+
+  const slangGrid = document.getElementById('slangGrid');
+  slangGrid.innerHTML = '';
+  if (d.slang && d.slang.length) {
+    d.slang.forEach(s => {
+      slangGrid.innerHTML += `<div class="slang-item">
+        <div class="slang-term">${esc(s.term)}</div>
+        <div class="slang-meaning">${esc(s.meaning)}</div>
+      </div>`;
+    });
+    show('slangSection');
+  } else {
+    hide('slangSection');
+  }
+
+  const sourcesList = document.getElementById('sourcesList');
+  sourcesList.innerHTML = '';
+  if (d.sources && d.sources.length) {
+    d.sources.forEach(s => {
+      sourcesList.innerHTML += `<div class="source-item">
+        <div class="source-dot"></div>
+        <div class="source-text">${esc(s.title)}<br><span style="color:var(--text-dim);font-size:10px;">${esc(s.url)}</span></div>
+      </div>`;
+    });
+    show('sourcesSection');
+  } else {
+    hide('sourcesSection');
+  }
+
+  document.getElementById('jsonPre').textContent = JSON.stringify(d, null, 2);
+  showFlex('outputPanel');
+  document.getElementById('outputPanel').classList.add('visible');
+  document.getElementById('outputPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function showError(msg) {
+  hide('loadingPanel');
+  document.getElementById('errorText').textContent = msg;
+  document.getElementById('errorPanel').style.display = 'flex';
+  document.getElementById('outputPanel').classList.remove('visible');
+}
+
+function setLoading(on) {
+  const btn = document.getElementById('runBtn');
+  btn.disabled = on;
+  document.getElementById('btnIcon').innerHTML = on ? '<span class="spinner"></span>' : '▶';
+  document.getElementById('btnText').textContent = on ? 'Analyzing...' : 'Analyze Fragment';
+  document.getElementById('loadingPanel').style.display = on ? 'flex' : 'none';
+  if (on) {
+    document.getElementById('outputPanel').classList.remove('visible');
+    hide('errorPanel');
+  }
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+document.getElementById('fragmentInput').addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') runAnalysis();
+});
+</script>
+</body>
+</html>
